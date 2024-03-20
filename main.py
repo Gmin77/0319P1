@@ -1,6 +1,8 @@
 import os, datetime, csv
 import streamlit as st
 from pyparsing import empty
+import pandas as pd
+import pygwalker as pyg
 import requests, json, folium
 from dotenv import load_dotenv
 from streamlit_folium import folium_static
@@ -51,7 +53,6 @@ def get_weather_data_day(city) :
     apis = f'https://api.openweathermap.org/data/2.5/forecast?q={city}&appid={apikey}&units=metric'
     forecast_result = requests.get(apis)
     return json.loads(forecast_result.text)
-
 
 def show_map(data):
     if 'main' in data and 'weather' in data:
@@ -123,7 +124,6 @@ def data_search(city):
                 elif check_list1 < min_temp[key]:
                     min_temp[key] = check_list1
 
-                
                 print(max_temp)
                 print(min_temp)
 
@@ -152,6 +152,10 @@ def data_search(city):
     print("최저 온도:")
     for key, value in min_temp.items():
         print(f"{key}: {value}°C")
+
+def graph():
+    df = pd.read_csv('temperature_data.csv')
+    gwalker = pyg.walk(df)
         
 def main() :
     # 사이드바
@@ -186,7 +190,7 @@ def main() :
             show_map(data)
 
     with graph1 :
-        # graph()
-        pass
+        graph()
+        
 
 main()
