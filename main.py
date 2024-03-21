@@ -5,28 +5,24 @@ import pandas as pd
 import pygwalker as pyg
 import requests, json, folium
 from dotenv import load_dotenv
+import matplotlib.pyplot as plt
 from streamlit_folium import folium_static
 
 load_dotenv()
 st.set_page_config(layout="wide")
 apikey = os.getenv("OPENWEATHERMAP_API_KEY")
+file_path = 'temperature_data.csv'
 
 LEFT_GAP = 0.2
 RIGHT_GAP = 0.2
 
 left, con1, right = st.columns([0.1, 1.0, 0.1])
 left, select, right = st.columns([0.1, 1.0, 0.1])
-left, graph1, right = st.columns([0.1, 1.0, 0.1])
+left, graph, text = st.columns([0.1, 0.55, 0.45])
 # left, s1, s2 = st.columns([0.1, 0.45, 0.52])
 
 def title():
     st.title("OpenWeather Information")
-
-def select_box():
-    selected_city_options = ['Seoul', 'Busan', 'Paris', 'Berlin', 'Firenze', 'Napoli', 'Tokyo', 'Manila', 'Budapest', 'Zurich', 'Beijing', 'Moscow', 'Boston', 'Barcelona', 'Shanghai', 'Sydney', 'Amsterdam', 'Prague']
-    selected_city_index = st.selectbox('', selected_city_options)
-
-    city = selected_city_index
 
 def Select_city(city, data):
     st.subheader('Info')
@@ -67,8 +63,7 @@ def show_map(data):
     else:
         st.write('City not found')
 
-def data_search(city):
-    data_to_write = {}
+def record_weather_data(city):
     date_check ={} # 값을 추가해줄 딕셔너리
     max_temp = {}
     min_temp = {}
@@ -127,24 +122,6 @@ def data_search(city):
                 print(max_temp)
                 print(min_temp)
 
-            check_list = datas['list'][value]
-            day = check_list['dt_txt'].split()[0]  # 날짜
-            temp_max = max_temp[key]  # 최고 온도
-            temp_min = min_temp[key]  # 최저 온도
-            # data_to_write.append(temp_min, temp_max, day)
-
-            #csv파일에 저장
-            filename = 'temperature_data.csv'
-            with open(filename, mode='w', newline='') as file:
-                writer = csv.writer(file)
-                writer.writerow(['city', 'min_temp', 'max_temp', 'datetime'])  # 헤더 쓰기
-                for day, max_temp_value in max_temp.items():
-                    min_temp_value = min_temp.get(day, None)
-                    writer.writerow([city, min_temp_value, max_temp_value, check_list3])
-           
-            print(temp_max)
-            print(temp_min)
-
     print("최고 온도:")
     for key, value in max_temp.items():
         print(f"{key}: {value}°C")
@@ -152,11 +129,16 @@ def data_search(city):
     print("최저 온도:")
     for key, value in min_temp.items():
         print(f"{key}: {value}°C")
-
-def graph():
-    df = pd.read_csv('temperature_data.csv')
-    gwalker = pyg.walk(df)
+    
+    return max_temp, min_temp
         
+def append_to_csv(city, max_temp, min_temp):
+    with open(file_path, 'a', newline='') as file:
+        writer = csv.writer(file)
+        for day, max_temp_value in max_temp.items():
+            min_temp_value = min_temp.get(day, None)
+            writer.writerow([city, min_temp_value, max_temp_value, day])
+
 def main() :
     # 사이드바
     st.sidebar.header("REPORTS")
@@ -178,9 +160,15 @@ def main() :
         selected_city_index = st.selectbox('', selected_city_options, key="unique_key_for_selectbox")
 
         city = selected_city_index
-        data_search(city)
+        # 선택한 도시의 최고 온도와 최저 온도 기록
+        max_temp, min_temp = record_weather_data(city)
+        df_max = pd.DataFrame(max_temp.items(), columns=['Date', 'Max Temp'])
+        df_min = pd.DataFrame(min_temp.items(), columns=['Date', 'Min Temp'])
+
+        # CSV 파일에 데이터 추가
+        append_to_csv(city, max_temp, min_temp)
+        record_weather_data(city)
         data = get_weather_data(city)
-        datas = get_weather_data_day(city)
 
         col1, col2 = st.columns(2)
         with col1 : 
@@ -189,8 +177,20 @@ def main() :
         with col2 :
             show_map(data)
 
-    with graph1 :
-        graph()
-        
+    with graph :
+        st.set_option('deprecation.showPyplotGlobalUse', False)
+        plt.figure(figsize=(10, 6))
+        plt.plot(df_max['Date'], df_max['Max Temp'], label='Max Temperature', marker='*')
+        plt.plot(df_min['Date'], df_min['Min Temp'], label='Min Temperature', marker='*')
+        plt.xlabel('Date')
+        plt.ylabel('Temperature (°C)')
+        plt.title(f'Weekly Temperature Forecast {city}')
+        plt.xticks(rotation=45)
+        plt.legend()
+        plt.tight_layout()
 
-main()
+        # plt.show() 대신에 st.pyplot() 사용
+        st.pyplot()
+
+if __name__ == "__main__":
+    main()
