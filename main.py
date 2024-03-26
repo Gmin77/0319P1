@@ -18,7 +18,7 @@ RIGHT_GAP = 0.2
 
 left, con1, right = st.columns([0.1, 1.0, 0.1])
 left, select, right = st.columns([0.1, 1.0, 0.1])
-left, graph, text = st.columns([0.1, 0.55, 0.45])
+left, graph, text = st.columns([0.1, 1.0, 0.1])
 # left, s1, s2 = st.columns([0.1, 0.45, 0.52])
 
 def title():
@@ -143,9 +143,8 @@ def main() :
     # 사이드바
     st.sidebar.header("REPORTS")
 
-    st.sidebar.markdown("OpenWeather API")
-    st.sidebar.markdown("Checking Information")
-    st.sidebar.markdown("Report")
+    st.sidebar.button("Weather Information", use_container_width =True)
+    st.sidebar.button("Report", use_container_width =True)
 
     with left : 
         empty()
